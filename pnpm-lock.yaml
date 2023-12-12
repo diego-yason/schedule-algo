@@ -6,28 +6,28 @@ settings:
 
 devDependencies:
   '@sveltejs/adapter-auto':
-    specifier: ^2.0.0
+    specifier: ^2.1.1
     version: 2.1.1(@sveltejs/kit@1.29.1)
   '@sveltejs/kit':
-    specifier: ^1.27.4
+    specifier: ^1.29.1
     version: 1.29.1(svelte@4.2.8)(vite@4.5.1)
   prettier-plugin-svelte:
     specifier: ^3.1.2
     version: 3.1.2(prettier@3.1.1)(svelte@4.2.8)
   svelte:
-    specifier: ^4.2.7
+    specifier: ^4.2.8
     version: 4.2.8
   svelte-check:
-    specifier: ^3.6.0
+    specifier: ^3.6.2
     version: 3.6.2(svelte@4.2.8)
   tslib:
-    specifier: ^2.4.1
+    specifier: ^2.6.2
     version: 2.6.2
   typescript:
-    specifier: ^5.0.0
+    specifier: ^5.3.3
     version: 5.3.3
   vite:
-    specifier: ^4.4.2
+    specifier: ^4.5.1
     version: 4.5.1
 
 packages:
