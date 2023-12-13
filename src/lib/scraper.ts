@@ -32,6 +32,8 @@ export async function mlsData(htmlContent: string): Promise<ScrapedCourse[]> {
 
     const data: ScrapedCourse[] = [];
     let sectionData: Partial<ScrapedCourse> = {};
+
+    // TODO: add a case where prof name is not indicated (it can happen sometimes)
     for (const row of trElements) {
         const tdElements = row.querySelectorAll("td");
         // check if row has the "1" attribute
@@ -85,6 +87,9 @@ export async function mlsData(htmlContent: string): Promise<ScrapedCourse[]> {
         sectionData.courseCode = courseCode;
         sectionData.section = section;
         sectionData.remarks = remarks;
+
+        if (section.startsWith("X")) sectionData.laguna = true;
+
         for (const day of days)
             sectionData.schedule.push({
                 day,
