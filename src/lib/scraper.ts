@@ -1,106 +1,78 @@
-import type { ScrapedCourse } from "./types";
-
-export async function mlsData(htmlContent: string): Promise<ScrapedCourse[]> {
+export async function mlsData(htmlContent: string) {
     const parser = new DOMParser();
 
-    // Parse HTML string into a document
+    // Create a DOM from the HTML content
     const dom = parser.parseFromString(htmlContent, "text/html");
-    const body = dom.body;
+    const document = dom.documentElement;
 
-    // Find header for table: p element with class "content_title"
-    const contentElement = body.querySelector(".content_title")?.parentElement;
+    // Find the first element with the "content" class
+    const contentElement = document.querySelector(".content");
     if (contentElement == null) throw new Error("Invalid file given");
 
-    // Access the form element within the content element
-    const formElement = contentElement.querySelector("form");
-    if (formElement == null) throw new Error("Invalid file given");
-
     // Get the second table element inside the content element
-    const tableElement = formElement.querySelector("table");
-    if (tableElement == null) throw new Error("Invalid file given");
+    const tableElements = contentElement.querySelectorAll("table");
+    const secondTableElement = tableElements[1];
 
     // Get the first tbody element inside the second table element
-    const tbodyElement = tableElement.querySelector("tbody");
+    const tbodyElement = secondTableElement.querySelector("tbody");
     if (tbodyElement == null) throw new Error("Invalid file given");
-    console.log(tbodyElement);
 
-    // Get all tr elements from tbody
+    // Convert the tr elements inside the tbody element into objects
     const trElements = tbodyElement.querySelectorAll("tr");
+    const data = [];
 
-    // delete first tr element
-    trElements[0].remove();
+    for (const trElement of trElements) {
+        const tdElements = trElement.querySelectorAll("td");
+        const rowData = [];
 
-    const data: ScrapedCourse[] = [];
-    let sectionData: Partial<ScrapedCourse> = {};
+        for (const tdElement of tdElements) {
+            const innerHTML = tdElement.innerHTML.trim();
 
-    // TODO: add a case where prof name is not indicated (it can happen sometimes)
-    for (const row of trElements) {
-        const tdElements = row.querySelectorAll("td");
-        // check if row has the "1" attribute
-        if (row.getAttribute("1") != null) {
-            if (sectionData.faculty == null)
-                sectionData.faculty = tdElements[0].innerText.trim() ?? "";
-            continue;
-        }
-
-        if (tdElements[0].innerText.trim() == "Class Nbr") continue;
-
-        let days = tdElements[3].innerText.trim().split("");
-
-        const time = tdElements[4].innerText
-            .trim()
-            .split("-")
-            .map((x) => x.trim());
-        const timeStart = parseInt(time[0]);
-        const timeEnd = parseInt(time[1]);
-
-        let room = tdElements[5].innerText.trim(); // room is sometimes empty
-        if (room == "") room = "TBA";
-
-        if (sectionData.schedule == null) sectionData.schedule = [];
-        // check if first td only contains &nbsp;
-        const isContinuation = tdElements[0].innerText.trim() == "";
-        if (isContinuation) {
-            for (const day of days)
-                sectionData.schedule.push({
-                    day,
-                    timeStart,
-                    timeEnd,
-                    room,
-                });
-            continue;
-        } else {
-            if (sectionData.courseCode != null) {
-                // do things and push
-                data.push(sectionData as ScrapedCourse);
-                sectionData = {};
-                sectionData.schedule = [];
+            if (innerHTML.includes("<br>")) {
+                const values = innerHTML.split("<br>");
+                // clean it up with some trimming
+                values.forEach(
+                    (value, index) => (values[index] = value.trim()),
+                );
+                rowData.push(values);
+            } else {
+                rowData.push(innerHTML);
             }
         }
 
-        const classNumber = parseInt(tdElements[0].innerText.trim());
-        const courseCode = tdElements[1].innerText.trim();
-        const section = tdElements[2].innerText.trim();
-        const remarks = tdElements[8].innerText.trim();
+        const courseTitle = rowData[0];
+        const section = rowData[1];
+        const units = rowData[2];
+        const days = rowData[3];
+        const time = rowData[4];
+        const room = rowData[5];
+        const notes = rowData[6];
 
-        sectionData.classNumber = classNumber;
-        sectionData.courseCode = courseCode;
-        sectionData.section = section;
-        sectionData.remarks = remarks;
+        const courseObject = {
+            CourseTitle: courseTitle,
+            Section: section,
+            Units: units,
+            Days: days,
+            Time: time,
+            Room: room,
+            Notes: notes,
+        };
 
-        if (section.startsWith("X")) sectionData.laguna = true;
-
-        for (const day of days)
-            sectionData.schedule.push({
-                day,
-                timeStart,
-                timeEnd,
-                room,
-            });
+        data.push(courseObject);
     }
-    data.push(sectionData as ScrapedCourse);
 
-    console.log(data);
+    data.pop();
+
+    // Further processing
+    for (const course of data) {
+        const newTime = [];
+        for (const dualTime of course.Time) {
+            newTime.push(dualTime.split("-"));
+        }
+        // @ts-expect-error The conversion doesn't have a set typedef
+        // although, outside of this file, there will be a typedef
+        course.Time = newTime;
+    }
 
     return data;
 }
